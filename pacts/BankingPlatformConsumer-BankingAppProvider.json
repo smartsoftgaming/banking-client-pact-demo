@@ -1,0 +1,280 @@
+{
+  "consumer": {
+    "name": "BankingPlatformConsumer"
+  },
+  "interactions": [
+    {
+      "description": "a request to get account balance",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "account 1 exists for balance"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept": [
+            "application/json"
+          ]
+        },
+        "method": "GET",
+        "path": "/api/accounts/1/balance"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "accountId": 1,
+            "balance": 1250.75,
+            "currency": "USD"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.accountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.balance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            },
+            "$.currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get account overdraft",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "account 1 exists for overdraft"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept": [
+            "application/json"
+          ]
+        },
+        "method": "GET",
+        "path": "/api/accounts/1/overdraft"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "accountId": 1,
+            "currency": "USD",
+            "overdraft": 300.0
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.accountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.overdraft": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "decimal"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get balance for non-existing account",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "account 999 does not exist"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept": [
+            "application/json"
+          ]
+        },
+        "method": "GET",
+        "path": "/api/accounts/999/balance"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "message": "Account not found"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "status": 404
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get overdraft for non-existing account",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "account 999 does not exist"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept": [
+            "application/json"
+          ]
+        },
+        "method": "GET",
+        "path": "/api/accounts/999/overdraft"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "message": "Account not found"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "status": 404
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to get user details",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "user exists"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Accept": [
+            "application/json"
+          ]
+        },
+        "method": "GET",
+        "path": "/api/users/1/details"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "email": "test@test.com",
+            "userId": 1,
+            "username": "test"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": ".+@.+"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.username": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.27",
+      "models": "1.2.8"
+    },
+    "pactSpecification": {
+      "version": "4.0"
+    }
+  },
+  "provider": {
+    "name": "BankingAppProvider"
+  }
+}
