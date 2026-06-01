@@ -66,11 +66,6 @@ public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
     [MemberData(nameof(NotFoundTestCases))]
     public async Task GetOverdraft_AccountNotFound_ThrowsAccountNotFoundException(OverdraftNotFoundTestData testData)
     {
-        var expectedResponse = new
-        {
-            message = testData.ExpectedMessage
-        };
-
         PactBuilder
             .UponReceiving(testData.Description)
             .Given(ProviderStates.Accounts.AccountNotFound)
@@ -80,16 +75,16 @@ public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
             .WillRespond()
             .WithStatus(HttpStatusCode.NotFound)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
-            .WithJsonBody(expectedResponse);
+            .WithJsonBody(new { message = testData.ExpectedMessage });
 
-        await PactBuilder.VerifyAsync(async ctx =>
+        await PactBuilder.VerifyAsync(async ctx =>  
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new AccountApiClient(httpClient);
             var ex = await Assert.ThrowsAsync<NotFoundException>(
                 () => client.GetOverdraftAsync(testData.AccountId));
 
-            Assert.Equal(expectedResponse.message, ex.Message);
+            Assert.Equal(testData.ExpectedMessage, ex.Message);
         });
     }
 }

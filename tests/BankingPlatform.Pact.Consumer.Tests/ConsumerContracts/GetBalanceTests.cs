@@ -66,10 +66,6 @@ public class GetBalanceTests(ITestOutputHelper output) : PactTestBase(output)
     [MemberData(nameof(NotFoundTestCases))]
     public async Task GetBalance_AccountNotFound_ThrowsAccountNotFoundException(BalanceNotFoundTestData testData)
     {
-        var expectedResponse = new
-        {
-            message = testData.ExpectedMessage
-        };
 
         PactBuilder
             .UponReceiving(testData.Description)
@@ -80,8 +76,8 @@ public class GetBalanceTests(ITestOutputHelper output) : PactTestBase(output)
             .WillRespond()
             .WithStatus(HttpStatusCode.NotFound)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
-            .WithJsonBody(expectedResponse);
-
+            .WithJsonBody(new { message = testData.ExpectedMessage });
+        
         await PactBuilder.VerifyAsync(async ctx =>
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
@@ -89,7 +85,7 @@ public class GetBalanceTests(ITestOutputHelper output) : PactTestBase(output)
             var ex = await Assert.ThrowsAsync<NotFoundException>(
                 () => client.GetBalanceAsync(testData.AccountId));
 
-            Assert.Equal(expectedResponse.message, ex.Message);
+            Assert.Equal(testData.ExpectedMessage, ex.Message);
         });
     }
 }
