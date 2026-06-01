@@ -1,7 +1,9 @@
-﻿using System.Net;
-using System.Net.Http.Headers;
-using BankingPlatform.Client.Clients;
+﻿using BankingPlatform.Client.Clients;
+using Microsoft.Net.Http.Headers;
 using PactNet.Matchers;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Mime;
 using Xunit.Abstractions;
 
 namespace BankingPlatform.Pact.Consumer.Tests.ConsumerContracts;
@@ -15,10 +17,10 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             .UponReceiving("a request to get user details")
             .Given(ProviderStates.Users.UserExists)
             .WithRequest(HttpMethod.Get, "/api/users/1/details")
-            .WithHeader("Accept", "application/json")
+            .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
             .WillRespond()
             .WithStatus(HttpStatusCode.OK)
-            .WithHeader("Content-Type", "application/json; charset=utf-8")
+            .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
             .WithJsonBody(new
             {
                 userId = Match.Integer(1),
@@ -28,16 +30,10 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
 
         await PactBuilder.VerifyAsync(async ctx =>
         {
-            var httpClient = new HttpClient
-            {
-                BaseAddress = ctx.MockServerUri
-            };
+        
 
-            httpClient.DefaultRequestHeaders.Accept.Add(
-                new MediaTypeWithQualityHeaderValue("application/json"));
-
+            var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new UserApiClient(httpClient);
-
             var user = await client.GetUserAsync(1);
 
             Assert.IsType<int>(user.UserId);

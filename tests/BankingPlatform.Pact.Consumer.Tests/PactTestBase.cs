@@ -1,9 +1,11 @@
 ﻿using PactNet;
 using PactNet.Infrastructure.Outputters;
+using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text.Json;
-using Xunit.Abstractions;
+using Xunit.Abstractions;   
 
-namespace BankingPlatform.Pact.Consumer.Tests;
+namespace BankingPlatform.Pact.Consumer.Tests;  
 
 public abstract class PactTestBase
 {
@@ -39,6 +41,13 @@ public abstract class PactTestBase
         PactBuilder = pact.WithHttpInteractions();
     }
 
+    protected static HttpClient CreateHttpClient(Uri baseAddress)
+    {
+        var httpClient = new HttpClient { BaseAddress = baseAddress };
+        httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json));
+        return httpClient;
+    }
 }
 
 
