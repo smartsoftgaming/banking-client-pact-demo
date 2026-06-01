@@ -18,6 +18,7 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             .Given(ProviderStates.Users.UserExists)
             .WithRequest(HttpMethod.Get, "/api/users/1/details")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
+
             .WillRespond()
             .WithStatus(HttpStatusCode.OK)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
