@@ -9,16 +9,37 @@ using Xunit.Abstractions;
 
 namespace BankingPlatform.Pact.Consumer.Tests.ConsumerContracts;
 
+public record OverdraftSuccessTestData(
+    int AccountId,
+    decimal ExpectedOverdraft,
+    string Currency,
+    string Description);
+
+public record OverdraftNotFoundTestData(
+    int AccountId,
+    string ExpectedMessage,
+    string Description);
+
 public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
 {
-    [Fact]
-    public async Task GetOverdraft_ExistingAccount_ReturnsOverdraft()
+    public static TheoryData<OverdraftSuccessTestData> SuccessTestCases => new()
     {
+        new OverdraftSuccessTestData(1, 300.00m, "USD", "a request to get account overdraft")
+    };
 
+    public static TheoryData<OverdraftNotFoundTestData> NotFoundTestCases => new()
+    {
+        new OverdraftNotFoundTestData(999, "Account not found", "a request to get overdraft for non-existing account")
+    };
+
+    [Theory]
+    [MemberData(nameof(SuccessTestCases))]
+    public async Task GetOverdraft_ExistingAccount_ReturnsOverdraft(OverdraftSuccessTestData testData)
+    {
         PactBuilder
-            .UponReceiving("a request to get account overdraft")
+            .UponReceiving(testData.Description)
             .Given(ProviderStates.Accounts.AccountExistsForOverdraft)
-            .WithRequest(HttpMethod.Get, "/api/accounts/1/overdraft")
+            .WithRequest(HttpMethod.Get, $"/api/accounts/{testData.AccountId}/overdraft")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
@@ -26,33 +47,34 @@ public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
             .WithJsonBody(new
             {
-                accountId = Match.Integer(1),
-                overdraft = Match.Decimal(300.00m),
-                currency = Match.Type("USD")
+                accountId = Match.Integer(testData.AccountId),
+                overdraft = Match.Decimal(testData.ExpectedOverdraft),
+                currency = Match.Type(testData.Currency)
             });
 
         await PactBuilder.VerifyAsync(async ctx =>
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new AccountApiClient(httpClient);
-            var overdraft = await client.GetOverdraftAsync(1);
+            var overdraft = await client.GetOverdraftAsync(testData.AccountId);
 
-            Assert.Equal(300.00m, overdraft);
+            Assert.Equal(testData.ExpectedOverdraft, overdraft);
         });
     }
 
-    [Fact]
-    public async Task GetOverdraft_AccountNotFound_ThrowsAccountNotFoundException()
+    [Theory]
+    [MemberData(nameof(NotFoundTestCases))]
+    public async Task GetOverdraft_AccountNotFound_ThrowsAccountNotFoundException(OverdraftNotFoundTestData testData)
     {
         var expectedResponse = new
         {
-            message = "Account not found"
+            message = testData.ExpectedMessage
         };
 
         PactBuilder
-            .UponReceiving("a request to get overdraft for non-existing account")
+            .UponReceiving(testData.Description)
             .Given(ProviderStates.Accounts.AccountNotFound)
-            .WithRequest(HttpMethod.Get, "/api/accounts/999/overdraft")
+            .WithRequest(HttpMethod.Get, $"/api/accounts/{testData.AccountId}/overdraft")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
@@ -65,9 +87,9 @@ public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new AccountApiClient(httpClient);
             var ex = await Assert.ThrowsAsync<NotFoundException>(
-                () => client.GetOverdraftAsync(999));
+                () => client.GetOverdraftAsync(testData.AccountId));
 
-            Assert.Equal(expectedResponse.message   , ex.Message);
+            Assert.Equal(expectedResponse.message, ex.Message);
         });
     }
 }

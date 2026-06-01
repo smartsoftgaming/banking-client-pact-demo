@@ -8,15 +8,28 @@ using Xunit.Abstractions;
 
 namespace BankingPlatform.Pact.Consumer.Tests.ConsumerContracts;
 
+public record UserSuccessTestData(
+    int UserId,
+    string ExpectedUsername,
+    string ExpectedEmail,
+    string EmailRegex,
+    string Description);
+
 public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
 {
-    [Fact]
-    public async Task GetUser_ExistingUser_ReturnsUser()
+    public static TheoryData<UserSuccessTestData> SuccessTestCases => new()
+    {
+        new UserSuccessTestData(1, "test", "test@test.com", ".+@.+", "a request to get user details")
+    };
+
+    [Theory]
+    [MemberData(nameof(SuccessTestCases))]
+    public async Task GetUser_ExistingUser_ReturnsUser(UserSuccessTestData testData)
     {
         PactBuilder
-            .UponReceiving("a request to get user details")
+            .UponReceiving(testData.Description)
             .Given(ProviderStates.Users.UserExists)
-            .WithRequest(HttpMethod.Get, "/api/users/1/details")
+            .WithRequest(HttpMethod.Get, $"/api/users/{testData.UserId}/details")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
@@ -24,22 +37,20 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
             .WithJsonBody(new
             {
-                userId = Match.Integer(1),
-                username = Match.Type("test"),
-                email = Match.Regex("test@test.com", ".+@.+")
+                userId = Match.Integer(testData.UserId),
+                username = Match.Type(testData.ExpectedUsername),
+                email = Match.Regex(testData.ExpectedEmail, testData.EmailRegex)
             });
 
         await PactBuilder.VerifyAsync(async ctx =>
         {
-        
-
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new UserApiClient(httpClient);
-            var user = await client.GetUserAsync(1);
+            var user = await client.GetUserAsync(testData.UserId);
 
             Assert.IsType<int>(user.UserId);
-            Assert.Equal("test", user.Username);
-            Assert.Equal("test@test.com", user.Email);
+            Assert.Equal(testData.ExpectedUsername, user.Username);
+            Assert.Equal(testData.ExpectedEmail, user.Email);
         });
     }
 }
