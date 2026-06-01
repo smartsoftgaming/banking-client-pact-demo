@@ -50,7 +50,6 @@ public abstract class PactTestBase
     }
 }
 
-
 public class XUnitOutput(ITestOutputHelper output) : IOutput
 {
     private readonly ITestOutputHelper _output = output;
