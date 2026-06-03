@@ -30,6 +30,4 @@ public class UserApiClient(HttpClient httpClient) : IUserApiClient
         var result = await response.Content.ReadFromJsonAsync<UserResponse>(cancellationToken: cancellationToken);
         return result ?? throw new InvalidOperationException("User response was empty.");
     }
-
-
 }

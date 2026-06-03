@@ -32,7 +32,7 @@
         },
         "headers": {
           "Content-Type": [
-            "application/json; charset=utf-8"
+            "application/json"
           ]
         },
         "matchingRules": {
@@ -96,7 +96,7 @@
         },
         "headers": {
           "Content-Type": [
-            "application/json; charset=utf-8"
+            "application/json"
           ]
         },
         "matchingRules": {
@@ -221,14 +221,14 @@
           "content": {
             "email": "test@test.com",
             "userId": 1,
-            "username": "test"
+            "userName": "test"
           },
           "contentType": "application/json",
           "encoded": false
         },
         "headers": {
           "Content-Type": [
-            "application/json; charset=utf-8"
+            "application/json"
           ]
         },
         "matchingRules": {
@@ -247,14 +247,6 @@
               "matchers": [
                 {
                   "match": "integer"
-                }
-              ]
-            },
-            "$.username": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "type"
                 }
               ]
             }

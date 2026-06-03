@@ -38,7 +38,7 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             .WithJsonBody(new
             {
                 userId = Match.Integer(testData.UserId),
-                username = Match.Type(testData.ExpectedUsername),
+                userName = testData.ExpectedUsername,
                 email = Match.Regex(testData.ExpectedEmail, testData.EmailRegex)
             });
 
@@ -49,7 +49,7 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             var user = await client.GetUserAsync(testData.UserId);
 
             Assert.IsType<int>(user.UserId);
-            Assert.Equal(testData.ExpectedUsername, user.Username);
+            Assert.Equal(testData.ExpectedUsername, user.UserName);
             Assert.Equal(testData.ExpectedEmail, user.Email);
         });
     }
