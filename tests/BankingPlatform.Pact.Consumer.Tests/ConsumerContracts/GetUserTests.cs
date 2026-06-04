@@ -5,31 +5,20 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using Xunit.Abstractions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BankingPlatform.Pact.Consumer.Tests.ConsumerContracts;
 
-public record UserSuccessTestData(
-    int UserId,
-    string ExpectedUsername,
-    string ExpectedEmail,
-    string EmailRegex,
-    string Description);
-
 public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
 {
-    public static TheoryData<UserSuccessTestData> SuccessTestCases => new()
-    {
-        new UserSuccessTestData(1, "test", "test@test.com", ".+@.+", "a request to get user details")
-    };
 
-    [Theory]
-    [MemberData(nameof(SuccessTestCases))]
-    public async Task GetUser_ExistingUser_ReturnsUser(UserSuccessTestData testData)
-    {
+    [Fact]
+    public async Task GetUser_ExistingUser_ReturnsUser()
+    {        
         PactBuilder
-            .UponReceiving(testData.Description)
+            .UponReceiving("a request to get user details")
             .Given(ProviderStates.Users.UserExists)
-            .WithRequest(HttpMethod.Get, $"/api/users/{testData.UserId}/details")
+            .WithRequest(HttpMethod.Get, $"/api/users/1/details")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
@@ -37,20 +26,20 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
             .WithJsonBody(new
             {
-                userId = Match.Integer(testData.UserId),
-                userName = testData.ExpectedUsername,
-                email = Match.Regex(testData.ExpectedEmail, testData.EmailRegex)
+                userId = Match.Integer(1),
+                userName = "test",
+                email = Match.Regex("test@test.com", ".+@.+")
             });
 
         await PactBuilder.VerifyAsync(async ctx =>
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new UserApiClient(httpClient);
-            var user = await client.GetUserAsync(testData.UserId);
+            var user = await client.GetUserAsync(1);
 
-            Assert.IsType<int>(user.UserId);
-            Assert.Equal(testData.ExpectedUsername, user.UserName);
-            Assert.Equal(testData.ExpectedEmail, user.Email);
+            Assert.Equal(1, user.UserId);
+            Assert.Equal("test", user.UserName);
+            Assert.Equal("test@test.com", user.Email);
         });
     }
 }

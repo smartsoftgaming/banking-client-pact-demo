@@ -9,37 +9,16 @@ using Xunit.Abstractions;
 
 namespace BankingPlatform.Pact.Consumer.Tests.ConsumerContracts;
 
-public record OverdraftSuccessTestData(
-    int AccountId,
-    decimal ExpectedOverdraft,
-    string Currency,
-    string Description);
-
-public record OverdraftNotFoundTestData(
-    int AccountId,
-    string ExpectedMessage,
-    string Description);
-
 public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
 {
-    public static TheoryData<OverdraftSuccessTestData> SuccessTestCases => new()
+    [Fact]
+    public async Task GetOverdraft_ExistingAccount_ReturnsOverdraft()
     {
-        new OverdraftSuccessTestData(1, 300.00m, "USD", "a request to get account overdraft")
-    };
-
-    public static TheoryData<OverdraftNotFoundTestData> NotFoundTestCases => new()
-    {
-        new OverdraftNotFoundTestData(999, "Account not found", "a request to get overdraft for non-existing account")
-    };
-
-    [Theory]
-    [MemberData(nameof(SuccessTestCases))]
-    public async Task GetOverdraft_ExistingAccount_ReturnsOverdraft(OverdraftSuccessTestData testData)
-    {
+        
         PactBuilder
-            .UponReceiving(testData.Description)
+            .UponReceiving("a request to get account overdraft")
             .Given(ProviderStates.Accounts.AccountExistsForOverdraft)
-            .WithRequest(HttpMethod.Get, $"/api/accounts/{testData.AccountId}/overdraft")
+            .WithRequest(HttpMethod.Get, $"/api/accounts/1/overdraft")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
@@ -47,44 +26,43 @@ public class GetOverdraftTests(ITestOutputHelper output) : PactTestBase(output)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
             .WithJsonBody(new
             {
-                accountId = Match.Integer(testData.AccountId),
-                overdraft = Match.Decimal(testData.ExpectedOverdraft),
-                currency = Match.Type(testData.Currency)
+                accountId = 1,
+                overdraft = 300.00m,
+                currency = "USD"
             });
 
         await PactBuilder.VerifyAsync(async ctx =>
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new AccountApiClient(httpClient);
-            var overdraft = await client.GetOverdraftAsync(testData.AccountId);
+            var overdraft = await client.GetOverdraftAsync(1);
 
-            Assert.Equal(testData.ExpectedOverdraft, overdraft);
+            Assert.Equal(300.00m, overdraft);
         });
     }
 
-    [Theory]
-    [MemberData(nameof(NotFoundTestCases))]
-    public async Task GetOverdraft_AccountNotFound_ThrowsAccountNotFoundException(OverdraftNotFoundTestData testData)
+    [Fact]
+    public async Task GetOverdraft_AccountNotFound_ThrowsAccountNotFoundException()
     {
         PactBuilder
-            .UponReceiving(testData.Description)
+            .UponReceiving("a request to get overdraft for non-existing account")
             .Given(ProviderStates.Accounts.AccountNotFound)
-            .WithRequest(HttpMethod.Get, $"/api/accounts/{testData.AccountId}/overdraft")
+            .WithRequest(HttpMethod.Get, $"/api/accounts/999/overdraft")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
             .WithStatus(HttpStatusCode.NotFound)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
-            .WithJsonBody(new { message = testData.ExpectedMessage });
+            .WithJsonBody(new { message = "Account not found" });
 
         await PactBuilder.VerifyAsync(async ctx =>  
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new AccountApiClient(httpClient);
             var ex = await Assert.ThrowsAsync<NotFoundException>(
-                () => client.GetOverdraftAsync(testData.AccountId));
+                () => client.GetOverdraftAsync(999));
 
-            Assert.Equal(testData.ExpectedMessage, ex.Message);
+            Assert.Equal("Account not found", ex.Message);
         });
     }
 }
