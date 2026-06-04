@@ -15,10 +15,14 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
     [Fact]
     public async Task GetUser_ExistingUser_ReturnsUser()
     {        
+        const int UserId = 1;
+        const string ExpectedUserName = "test";
+        const string ExpectedEmail = "test@test.com";
+
         PactBuilder
             .UponReceiving("a request to get user details")
             .Given(ProviderStates.Users.UserExists)
-            .WithRequest(HttpMethod.Get, $"/api/users/1/details")
+            .WithRequest(HttpMethod.Get, $"/api/users/{UserId}/details")
             .WithHeader(HeaderNames.Accept, MediaTypeNames.Application.Json)
 
             .WillRespond()
@@ -26,20 +30,20 @@ public class GetUserTests(ITestOutputHelper output) : PactTestBase(output)
             .WithHeader(HeaderNames.ContentType, MediaTypeNames.Application.Json)
             .WithJsonBody(new
             {
-                userId = Match.Integer(1),
-                userName = "test",
-                email = Match.Regex("test@test.com", ".+@.+")
+                userId = Match.Integer(UserId),
+                userName = ExpectedUserName,
+                email = Match.Regex(ExpectedEmail, ".+@.+")
             });
 
         await PactBuilder.VerifyAsync(async ctx =>
         {
             var httpClient = CreateHttpClient(ctx.MockServerUri);
             var client = new UserApiClient(httpClient);
-            var user = await client.GetUserAsync(1);
+            var user = await client.GetUserAsync(UserId);
 
-            Assert.Equal(1, user.UserId);
-            Assert.Equal("test", user.UserName);
-            Assert.Equal("test@test.com", user.Email);
+            Assert.Equal(UserId, user.UserId);
+            Assert.Equal(ExpectedUserName, user.UserName);
+            Assert.Equal(ExpectedEmail, user.Email);
         });
     }
 }
